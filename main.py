@@ -20,13 +20,20 @@ def sendSerial(message: str):
 
 
 # SPR (set parameter) functions
+
+# Create command string and send to serial
 def setParameter(index: int, value: int):
     commandStr = f"SPR 0 {index} {value}\n"
     sendSerial(commandStr)
 
+# Callback function for osc, parse osc string, validate, then send to setVolume
 def setParameterHandler(address, *args):
     if len(args) == 2:
-        setParameter(index = int(args[0]), value = int(args[1]))
+        index = int(args[0])
+        value = int(args[1])
+
+        print(f"Command: {address} {index} {value}")
+        setParameter(index, value)
     else:
         print(f"Incorrect OSC arguments passed! Required: 2 Passed: {len(args)}")
 
@@ -42,10 +49,46 @@ def setVolume(index: int, value: int):
 # Callback function for osc, parse osc string, validate, then send to setVolume
 def setVolumeHandler(address, *args):
     if len(args) == 2:
-        print(f"Command: {address} {args[0]} {args[1]}")
-        setVolume(index = int(args[0]), value = int(args[1]))
+        index = int(args[0])
+        value = int(args[1])
+
+        print(f"Command: {address} {index} {value}")
+        setVolume(index, value)
     else:
         print(f"Incorrect OSC arguments passed! Required: 2 Passed: {len(args)}")
+
+
+
+# WAV playback related functions
+
+# Create command string and send to serial
+def playWav(index: int):
+    commandStr = f"PWF 0 {index}\n"
+    sendSerial(commandStr)
+
+# Callback function for osc, parse osc string, validate, then send to setVolume
+def playWavHandler(address, *args):
+    if len(args) == 1:
+        index = int(args[0])
+
+        print(f"Command: {address} {index}")
+        playWav(index)
+    else:
+        print(f"Incorrect OSC arguments passed! Required: 1 Passed: {len(args)}")
+
+
+# Create command string and send to serial
+def stopWav():
+    commandStr = f"SWF 0\n"
+    sendSerial(commandStr)
+
+# Callback function for osc, parse osc string, validate, then send to setVolume
+def stopWavHandler(address, *args):
+    if len(args) == 0:
+        print(f"Command: {address}")
+        stopWav()
+    else:
+        print(f"Incorrect OSC arguments passed! Required: 0 Passed: {len(args)}")
 
 
 
@@ -53,6 +96,8 @@ def setVolumeHandler(address, *args):
 # Address mapping
 dispatcher.map("/set/parameter", setParameterHandler)
 dispatcher.map("/set/volume", setVolumeHandler)
+dispatcher.map("/wav/play", playWavHandler)
+dispatcher.map("/wav/stop", stopWavHandler)
 
 
 
