@@ -1,5 +1,11 @@
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
+from serial import Serial
+
+ser = Serial()
+ser.baudrate = 38400
+ser.port = "/dev/ttySC0"
+
 
 ip = "0.0.0.0"
 port = 1337
@@ -13,7 +19,10 @@ server = BlockingOSCUDPServer((ip,port), dispatcher)
 
 # Serial communication function, send messages to serial device
 def sendSerial(message: str):
-    print(f"Message: {message}")
+    # print(f"Message: {message}")
+    ser.open()
+    ser.write(message.encode("ascii"))
+    ser.close()
 
 
 
