@@ -6,24 +6,32 @@ ser = Serial()
 ser.baudrate = 38400
 ser.port = "/dev/ttySC0"
 ser.write_timeout = 1
-print(ser)
+print(f"\nSerial port information:\n{ser}\n")
 
-ip = "0.0.0.0"
-port = 1337
+# Debug mode will print out prepared serial messages, serial enabled will disable/enable serial output
+debugMode = True
+serialEnabled = False
+
+
+oscIp = "0.0.0.0"
+oscPort = 1337
 
 
 # Shorthand for server and dispatcher
 dispatcher = Dispatcher()
-server = BlockingOSCUDPServer((ip,port), dispatcher)
+server = BlockingOSCUDPServer((oscIp,oscPort), dispatcher)
 
 
 
 # Serial communication function, send messages to serial device
 def sendSerial(message: str):
-    # print(f"Message: {message}")
-    ser.open()
-    ser.write(message.encode("ascii"))
-    ser.close()
+    
+    if debugMode:
+        print(f"Message: {message}")
+    if serialEnabled:
+        ser.open()
+        ser.write(message.encode("ascii"))
+        ser.close()
 
 
 
@@ -36,7 +44,7 @@ def setParameter(index: int, value: int):
     commandStr = f"SPR 0 {index} {value}\n"
     sendSerial(commandStr)
 
-# Callback function for osc, parse osc string, validate, then send to setVolume
+# Callback function for osc
 def setParameterHandler(address, *args):
     if len(args) == 2:
         index = int(args[0])
@@ -56,7 +64,7 @@ def setVolume(index: int, value: int):
     commandStr = f"SVL 0 {index} {value}\n"
     sendSerial(commandStr)
 
-# Callback function for osc, parse osc string, validate, then send to setVolume
+# Callback function for osc
 def setVolumeHandler(address, *args):
     if len(args) == 2:
         index = int(args[0])
@@ -76,7 +84,7 @@ def playWav(index: int):
     commandStr = f"PWF 0 {index}\n"
     sendSerial(commandStr)
 
-# Callback function for osc, parse osc string, validate, then send to setVolume
+# Callback function for osc
 def playWavHandler(address, *args):
     if len(args) == 1:
         index = int(args[0])
@@ -92,7 +100,7 @@ def stopWav():
     commandStr = f"SWF 0\n"
     sendSerial(commandStr)
 
-# Callback function for osc, parse osc string, validate, then send to setVolume
+# Callback function for osc
 def stopWavHandler(address, *args):
     if len(args) == 0:
         print(f"Command: {address}")
@@ -111,5 +119,5 @@ dispatcher.map("/wav/stop", stopWavHandler)
 
 
 
-print("OSC server started")
+print("OSC server starting")
 server.serve_forever()
