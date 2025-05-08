@@ -5,7 +5,8 @@ from serial import Serial
 ser = Serial()
 ser.baudrate = 38400
 ser.port = "/dev/ttySC0"
-
+ser.write_timeout = 1
+print(ser)
 
 ip = "0.0.0.0"
 port = 1337
