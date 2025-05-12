@@ -1,0 +1,10 @@
+communication:
+  mode: 'serial'
+  serial:
+    baudRate: 38400
+    port: "/dev/ttySC0"
+  osc:
+    listenIp: "0.0.0.0"
+    listenPort: 1337
+debugMode: True
+serialEnabled: True
