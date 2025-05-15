@@ -2,7 +2,6 @@ communication:
   mode: 'serial'
   serial:
     baudRate: 38400
-    port: "/dev/ttySC0"
   osc:
     listenIp: "0.0.0.0"
     listenPort: 1337
@@ -11,20 +10,9 @@ serialEnabled: True
 
 dmeDevices:
   - name: "test 1"
-    id: 0
-    mode: "serial"
-    serialPort: ""
-
-  - name: "test 2"
-    id: 1
-    mode: "network"
-    ip: ""
-    netPort: 1234
-
-  - name: "test 3"
     id: 2
-    mode: "network"
-    ip: ""
-    netPort: 1234
+    mode: "serial"
+    serialPort: "/dev/tty0"
+
 
 

@@ -11,7 +11,7 @@ devices = []
 # Serial setup
 ser = Serial()
 ser.baudrate = config["communication"]["serial"]["baudRate"]
-ser.port = config["communication"]["serial"]["port"]
+
 
 # Debug mode will print out prepared serial messages, serial enabled will disable/enable serial output
 debugMode = config["debugMode"]
@@ -31,6 +31,7 @@ dispatcher = Dispatcher()
 server = BlockingOSCUDPServer((oscIp,oscPort), dispatcher)
 
 
+# Convert each device in the config file to a dictionary in the devices array, index of each device is based on its "id" setting 
 for device in config["dmeDevices"]:
     try:
         if device["mode"] == "serial":
@@ -44,16 +45,14 @@ for device in config["dmeDevices"]:
 
 
 # Serial communication function, send messages to serial device
-def sendMessage(message: str, mode: str):
-
+def sendSerial(message: str, serialPort: str):
     if debugMode:
-        print(f"Message: {message} Mode: {mode}")
-    if serialEnabled and mode == "serial":
+        print(f"Message: {message} ID: {message[1]}")
+    if serialEnabled:
+        ser.port = serialPort
         ser.open()
         ser.write(message.encode("ascii"))
         ser.close()
-    elif networkEnabled and mode == "network":
-        print("Network stuff! :)")
 
 
 
@@ -61,8 +60,21 @@ def sendMessage(message: str, mode: str):
 
 # Create command string and send to serial
 def setParameter(address: str, *args):
+    print("run")
+    reqArgs = 2
+    id = int(address[1])
+    if len(args) == reqArgs:
+        index = args[0]
+        value = args[1]
+        commandStr = f"SPR 0 {index} {value} \n"
 
-    commandStr = f"SPR 0\n"
+        if devices[id]["mode"] == "serial":
+            sendSerial(commandStr, devices[id]["serialPort"])
+    else:
+        print(f"Incorrect args provided! Required: {reqArgs} Provided: {len(args)}")
+
+    print(address[1])
+    
 
 
 
@@ -81,9 +93,9 @@ def setParameterRel(index: int, value: int):
 # SVOL (set volume) functions
 
 # Create command string and send to serial
-def setVolume(index: int, value: int):
-    commandStr = f"SVL 0 {index} {value}\n"
-    sendSerial(commandStr)
+def setVolume(address: str, *args):
+    print(address[1])
+    commandStr = f"SVL 0"
 
 
 # RSVL (set volume relative) functions
@@ -118,14 +130,24 @@ def stopWav():
 # dispatcher.map("/wav/play", playWavHandler)
 # dispatcher.map("/wav/stop", stopWavHandler)
 
-for device in devices:
-    id = device["id"]
+for id,device in enumerate(devices):
+    id = id 
     name = device["name"]
 
-    dispatcher.map(f"/{id}/set/parameter", setParameter())
+    if debugMode:
+        print(f"ID: {id}")
+        print(f"Device def: {device}")
+    dispatcher.map(f"/{id}/set/parameter", setParameter)
+    dispatcher.map(f"/{id}/set/parameter/relative", setParameterRel)
+    
+    dispatcher.map(f"/{id}/set/volume", setVolume)
+    dispatcher.map(f"/{id}/set/volume/relative", setVolume)
 
+    dispatcher.map(f"/{id}/wav/play", playWav)
+    dispatcher.map(f"/{id}/wav/stop", stopWav)
 
 
 
 print("OSC server starting")
+print(dispatcher)
 server.serve_forever()
