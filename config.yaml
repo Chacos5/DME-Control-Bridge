@@ -8,3 +8,23 @@ communication:
     listenPort: 1337
 debugMode: True
 serialEnabled: True
+
+dmeDevices:
+  - name: "test 1"
+    id: 0
+    mode: "serial"
+    serialPort: ""
+
+  - name: "test 2"
+    id: 1
+    mode: "network"
+    ip: ""
+    netPort: 1234
+
+  - name: "test 3"
+    id: 2
+    mode: "network"
+    ip: ""
+    netPort: 1234
+
+
