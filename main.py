@@ -11,10 +11,11 @@ ser = Serial()
 ser.baudrate = config["communication"]["serial"]["baudRate"]
 ser.port = config["communication"]["serial"]["port"]
 
-
 # Debug mode will print out prepared serial messages, serial enabled will disable/enable serial output
 debugMode = config["debugMode"]
 serialEnabled = config["serialEnabled"]
+if debugMode:
+    print(ser)
 
 
 # OSC network setup
