@@ -31,7 +31,7 @@ dispatcher = Dispatcher()
 server = BlockingOSCUDPServer((oscIp,oscPort), dispatcher)
 
 
-# Convert each device in the config file to a dictionary in the devices array, index of each device is based on its "id" setting 
+# Convert each device definition in the config file to a dictionary in the devices dictionary, index of each device is based on its "id" setting 
 for item in config["dmeDevices"]:
     try:
         if (item["mode"] == "serial"):
@@ -42,7 +42,8 @@ for item in config["dmeDevices"]:
             print("Error, device mode is not set, skipping!")
     except:
         print(f"Invalid config item!")
-print(devices)
+if debugMode:
+    print(f"Device definitions: {devices}")
 
 # Serial communication function, send messages to serial device
 def sendSerial(message: str, serialPort: str):
@@ -56,7 +57,7 @@ def sendSerial(message: str, serialPort: str):
 
 
 
-# SPR function
+# SPR and RSPR function
 def setParameter(address: str, *args):
     reqParameters = 2 # Number of paramters expected
     
@@ -78,7 +79,6 @@ def setParameter(address: str, *args):
             print("Network logic")
     elif debugMode:
         print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
-
 
 
 def setParameterRel(address: str, *args):
@@ -104,7 +104,7 @@ def setParameterRel(address: str, *args):
         print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
 
-
+# SVOL and RSVOL functions
 
 def setVolume(address: str, *args):
     reqParameters = 2 # Number of paramters expected
@@ -151,8 +151,7 @@ def setVolumeRel(address: str, *args):
     elif debugMode:
         print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
-
-
+# PWF and SWF functions
 def playWav(address: str, *args):
     reqParameters = 1 # Number of paramters expected
     
