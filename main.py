@@ -5,16 +5,20 @@ import yaml
 
 config = yaml.safe_load(open("config.yaml","r"))
 
+devices = {}
+
 
 # Serial setup
 ser = Serial()
 ser.baudrate = config["communication"]["serial"]["baudRate"]
-ser.port = config["communication"]["serial"]["port"]
 
 
 # Debug mode will print out prepared serial messages, serial enabled will disable/enable serial output
 debugMode = config["debugMode"]
 serialEnabled = config["serialEnabled"]
+
+if debugMode:
+    print(f"\n{ser}\n")
 
 
 # OSC network setup
@@ -27,139 +31,183 @@ dispatcher = Dispatcher()
 server = BlockingOSCUDPServer((oscIp,oscPort), dispatcher)
 
 
+# Convert each device definition in the config file to a dictionary in the devices dictionary, index of each device is based on its "id" setting 
+for item in config["dmeDevices"]:
+    try:
+        if (item["mode"] == "serial"):
+            devices[item["id"]] = {"mode": "serial", "serialPort": item["serialPort"]}
+        elif (item["mode"] == "network"):
+            devices[item["id"]] = {"mode": "network", "ip": item["ip"], "port": item["port"]}
+        else:
+            print("Error, device mode is not set, skipping!")
+    except:
+        print(f"Invalid config item!")
+if debugMode:
+    print(f"Device definitions: {devices}")
 
 # Serial communication function, send messages to serial device
-def sendSerial(message: str):
+def sendSerial(message: str, serialPort: str):
     if debugMode:
-        print(f"Message: {message}")
+        print(f"Message: {message} Port: {serialPort}")
     if serialEnabled:
+        ser.port = serialPort
         ser.open()
         ser.write(message.encode("ascii"))
         ser.close()
 
 
 
-# SPR (set parameter) functions
+# SPR and RSPR function
+def setParameter(address: str, *args):
+    reqParameters = 2 # Number of paramters expected
+    
+    if len(args) == reqParameters:
 
-# Create command string and send to serial
-def setParameter(index: int, value: int):
-    commandStr = f"SPR 0 {index} {value}\n"
-    sendSerial(commandStr)
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
 
-# Callback function for osc
-def setParameterHandler(address, *args):
-    if len(args) == 2:
-        index = int(args[0])
-        value = int(args[1])
+        index = args[0]
+        value = args[1]
 
-        print(f"Command: {address} {index} {value}")
-        setParameter(index, value)
-    else:
-        print(f"Incorrect OSC arguments passed! Required: 2 Passed: {len(args)}")
+        mode = device["mode"]
 
-
-# RSPR (set parameter relative) functions
-def setParameterRel(index: int, value: int):
-    commandStr = f"RSPR 0 {index} {value}\n"
-    sendSerial(commandStr)
-
-def setParameterRelHandler(address, *args):
-    if len(args) == 2:
-        index = int(args[0])
-        value = int(args[1])
-
-        print(f"Command: {address} {index} {value}")
-        setParameterRel(index, value)
-    else:
-        print(f"Incorrect OSC arguments passed! Required: 2 Passed: {len(args)}")
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"SPR 0 {index} {value}\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
 
+def setParameterRel(address: str, *args):
+    reqParameters = 2 # Number of paramters expected
+    
+    if len(args) == reqParameters:
+
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
+
+        index = args[0]
+        value = args[1]
+
+        mode = device["mode"]
+
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"RSPR 0 {index} {value}\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
 
+# SVOL and RSVOL functions
+
+def setVolume(address: str, *args):
+    reqParameters = 2 # Number of paramters expected
+    
+    if len(args) == reqParameters:
+
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
+
+        index = args[0]
+        value = args[1]
+
+        mode = device["mode"]
+
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"SVL 0 {index} {value}\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
 
+def setVolumeRel(address: str, *args):
+    reqParameters = 2 # Number of paramters expected
+    
+    if len(args) == reqParameters:
 
-# SVOL (set volume) functions
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
 
-# Create command string and send to serial
-def setVolume(index: int, value: int):
-    commandStr = f"SVL 0 {index} {value}\n"
-    sendSerial(commandStr)
+        index = args[0]
+        value = args[1]
 
-# Callback function for osc
-def setVolumeHandler(address, *args):
-    if len(args) == 2:
-        index = int(args[0])
-        value = int(args[1])
+        mode = device["mode"]
 
-        print(f"Command: {address} {index} {value}")
-        setVolume(index, value)
-    else:
-        print(f"Incorrect OSC arguments passed! Required: 2 Passed: {len(args)}")
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"RSVL 0 {index} {value}\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
+# PWF and SWF functions
+def playWav(address: str, *args):
+    reqParameters = 1 # Number of paramters expected
+    
+    if len(args) == reqParameters:
 
-# RSVL (set volume relative) functions
-def setVolumeRel(index: int, value: int):
-    commandStr = f"RSVL 0 {index} {value}\n"
-    sendSerial(commandStr)
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
 
-def setVolumeRelHandler(address, *args):
-    if len(args) == 2:
-        index = int(args[0])
-        value = int(args[1])
+        index = args[0]
 
-        print(f"Command: {address} {index} {value}")
-        setVolumeRel(index, value)
-    else:
-        print(f"Incorrect OSC arguments passed! Required: 2 Passed: {len(args)}")
+        mode = device["mode"]
 
-
-
-# WAV playback related functions
-
-# Create command string and send to serial
-def playWav(index: int):
-    commandStr = f"PWF 0 {index}\n"
-    sendSerial(commandStr)
-
-# Callback function for osc
-def playWavHandler(address, *args):
-    if len(args) == 1:
-        index = int(args[0])
-
-        print(f"Command: {address} {index}")
-        playWav(index)
-    else:
-        print(f"Incorrect OSC arguments passed! Required: 1 Passed: {len(args)}")
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"PWF 0 {index}\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
 
-# Create command string and send to serial
-def stopWav():
-    commandStr = f"SWF 0\n"
-    sendSerial(commandStr)
+def stopWav(address: str, *args):
+    reqParameters = 0 # Number of paramters expected
+    
+    if len(args) == reqParameters:
 
-# Callback function for osc
-def stopWavHandler(address, *args):
-    if len(args) == 0:
-        print(f"Command: {address}")
-        stopWav()
-    else:
-        print(f"Incorrect OSC arguments passed! Required: 0 Passed: {len(args)}")
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
 
+        mode = device["mode"]
 
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"SWF 0\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
-# Address mapping
+print("\n")
+for item in devices:
+    id = item
 
-dispatcher.map("/set/parameter", setParameterHandler)
-dispatcher.map("/set/parameter/relative", setParameterRelHandler)
+    print(f"Mapping device with id {id}")
 
-dispatcher.map("/set/volume", setVolumeHandler)
-dispatcher.map("/set/volume/relative", setVolumeRelHandler)
+    dispatcher.map(f"/{id}/set/parameter", setParameter)
+    dispatcher.map(f"/{id}/set/parameter/relative", setParameterRel)
 
-dispatcher.map("/wav/play", playWavHandler)
-dispatcher.map("/wav/stop", stopWavHandler)
+    dispatcher.map(f"/{id}/set/volume", setVolume)
+    dispatcher.map(f"/{id}/set/volume/relative", setVolumeRel)
 
-
+    dispatcher.map(f"/{id}/wav/play", playWav)
+    dispatcher.map(f"/{id}/wav/stop", stopWav)
+    
 
 
 print("OSC server starting")
