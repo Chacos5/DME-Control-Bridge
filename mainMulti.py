@@ -5,7 +5,7 @@ import yaml
 
 config = yaml.safe_load(open("config.yaml","r"))
 
-devices = []
+devices = {}
 
 
 # Serial setup
@@ -16,7 +16,7 @@ ser.baudrate = config["communication"]["serial"]["baudRate"]
 # Debug mode will print out prepared serial messages, serial enabled will disable/enable serial output
 debugMode = config["debugMode"]
 serialEnabled = config["serialEnabled"]
-networkEnabled = False
+
 if debugMode:
     print(f"\n{ser}\n")
 
@@ -32,22 +32,22 @@ server = BlockingOSCUDPServer((oscIp,oscPort), dispatcher)
 
 
 # Convert each device in the config file to a dictionary in the devices array, index of each device is based on its "id" setting 
-for device in config["dmeDevices"]:
+for item in config["dmeDevices"]:
     try:
-        if device["mode"] == "serial":
-            devices.insert(device["id"],{"name": device["name"], "mode": "serial", "serialPort": device["serialPort"]})
-        elif device["mode"] == "network":
-            devices.insert(device["id"],{"name": device["name"], "mode": "network", "ip": device["ip"], "netPort": device["netPort"]})
+        if (item["mode"] == "serial"):
+            devices[item["id"]] = {"mode": "serial", "serialPort": item["serialPort"]}
+        elif (item["mode"] == "network"):
+            devices[item["id"]] = {"mode": "network", "ip": item["ip"], "port": item["port"]}
         else:
             print("Error, device mode is not set, skipping!")
-    except Exception as error:
-        print(f"Invalid config item! Item:\n{device}\n")
-
+    except:
+        print(f"Invalid config item!")
+print(devices)
 
 # Serial communication function, send messages to serial device
 def sendSerial(message: str, serialPort: str):
     if debugMode:
-        print(f"Message: {message} ID: {message[1]}")
+        print(f"Message: {message} Port: {serialPort}")
     if serialEnabled:
         ser.port = serialPort
         ser.open()
@@ -56,98 +56,160 @@ def sendSerial(message: str, serialPort: str):
 
 
 
-# SPR (set parameter) functions
-
-# Create command string and send to serial
+# SPR function
 def setParameter(address: str, *args):
-    print("run")
-    reqArgs = 2
-    id = int(address[1])
-    if len(args) == reqArgs:
+    reqParameters = 2 # Number of paramters expected
+    
+    if len(args) == reqParameters:
+
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
+
         index = args[0]
         value = args[1]
-        commandStr = f"SPR 0 {index} {value} \n"
 
-        if devices[id]["mode"] == "serial":
-            sendSerial(commandStr, devices[id]["serialPort"])
-    else:
-        print(f"Incorrect args provided! Required: {reqArgs} Provided: {len(args)}")
+        mode = device["mode"]
 
-    print(address[1])
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"SPR 0 {index} {value}\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
+
+
+
+def setParameterRel(address: str, *args):
+    reqParameters = 2 # Number of paramters expected
     
+    if len(args) == reqParameters:
+
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
+
+        index = args[0]
+        value = args[1]
+
+        mode = device["mode"]
+
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"RSPR 0 {index} {value}\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
 
 
-# RSPR (set parameter relative) functions
-def setParameterRel(index: int, value: int):
-    commandStr = f"RSPR 0 {index} {value}\n"
-    sendSerial(commandStr)
 
-
-
-
-
-
-
-
-# SVOL (set volume) functions
-
-# Create command string and send to serial
 def setVolume(address: str, *args):
-    print(address[1])
-    commandStr = f"SVL 0"
+    reqParameters = 2 # Number of paramters expected
+    
+    if len(args) == reqParameters:
+
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
+
+        index = args[0]
+        value = args[1]
+
+        mode = device["mode"]
+
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"SVL 0 {index} {value}\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
 
-# RSVL (set volume relative) functions
-def setVolumeRel(index: int, value: int):
-    commandStr = f"RSVL 0 {index} {value}\n"
-    sendSerial(commandStr)
+def setVolumeRel(address: str, *args):
+    reqParameters = 2 # Number of paramters expected
+    
+    if len(args) == reqParameters:
+
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
+
+        index = args[0]
+        value = args[1]
+
+        mode = device["mode"]
+
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"RSVL 0 {index} {value}\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
 
-# WAV playback related functions
 
-# Create command string and send to serial
-def playWav(index: int):
-    commandStr = f"PWF 0 {index}\n"
-    sendSerial(commandStr)
+def playWav(address: str, *args):
+    reqParameters = 1 # Number of paramters expected
+    
+    if len(args) == reqParameters:
+
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
+
+        index = args[0]
+
+        mode = device["mode"]
+
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"PWF 0 {index}\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
 
+def stopWav(address: str, *args):
+    reqParameters = 0 # Number of paramters expected
+    
+    if len(args) == reqParameters:
 
-# Create command string and send to serial
-def stopWav():
-    commandStr = f"SWF 0\n"
-    sendSerial(commandStr)
+        id = int(address[1]) # Get device id from address str
+        device = devices[id] # Get device dict from devices based on ID
 
+        mode = device["mode"]
 
-# Address mapping
+        if mode == "serial":
+            port = device["serialPort"]
+            command = f"SWF 0\n"
+            sendSerial(command, port)
+        elif mode == "network":
+            print("Network logic")
+    elif debugMode:
+        print(f"Invalid number of paramters provided. Needed: {reqParameters} Provided: {len(args)}")
 
-# dispatcher.map("/set/parameter", setParameterHandler)
-# dispatcher.map("/set/parameter/relative", setParameterRelHandler)
+print("\n")
+for item in devices:
+    id = item
 
-# dispatcher.map("/set/volume", setVolumeHandler)
-# dispatcher.map("/set/volume/relative", setVolumeRelHandler)
+    print(f"Mapping device with id {id}")
 
-# dispatcher.map("/wav/play", playWavHandler)
-# dispatcher.map("/wav/stop", stopWavHandler)
-
-for id,device in enumerate(devices):
-    id = id 
-    name = device["name"]
-
-    if debugMode:
-        print(f"ID: {id}")
-        print(f"Device def: {device}")
     dispatcher.map(f"/{id}/set/parameter", setParameter)
     dispatcher.map(f"/{id}/set/parameter/relative", setParameterRel)
-    
+
     dispatcher.map(f"/{id}/set/volume", setVolume)
-    dispatcher.map(f"/{id}/set/volume/relative", setVolume)
+    dispatcher.map(f"/{id}/set/volume/relative", setVolumeRel)
 
     dispatcher.map(f"/{id}/wav/play", playWav)
     dispatcher.map(f"/{id}/wav/stop", stopWav)
-
+    
 
 
 print("OSC server starting")
-print(dispatcher)
 server.serve_forever()

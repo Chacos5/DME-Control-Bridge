@@ -10,9 +10,14 @@ serialEnabled: True
 
 dmeDevices:
   - name: "test 1"
+    id: 1
+    mode: "serial"
+    serialPort: "/dev/ttySC0"
+  - name: "test 2"
     id: 2
     mode: "serial"
-    serialPort: "/dev/tty0"
+    serialPort: "/dev/ttySC1"
+    
 
 
 
